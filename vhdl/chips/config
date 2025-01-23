@@ -1,0 +1,9 @@
+#!/bin/bash
+LIMIT=10
+DEPTH=1
+VHD_SUFFIX=.vhd
+YAML_SUFFIX=.yaml
+TB_SUFFIX=_tb.vhd
+LOG_SUFFIX=.log
+WAVE_SUFFIX=.vcd
+HELP_FILE=help.md

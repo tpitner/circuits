@@ -1,0 +1,79 @@
+project:
+  name: TTCPU
+  version: 0.1
+  author:
+    name: Tomáš Pitner
+    email: tomas.pitner@gmail.com
+  library: ieee
+  use: [ieee.std_logic_1164.all, ieee.numeric_std.all, work.pkg_fmt.all, work.ttcpu_lib.all]
+
+entities:
+  - name: ALU_74181
+    description: "Čtyřbitová aritmeticko-logická jednotka"
+    ports:
+      - name: A
+        direction: in
+        type: "std_logic_vector(3 downto 0)"
+        description: "Vstup A"
+      - name: B
+        direction: in
+        type: "std_logic_vector(3 downto 0)"
+        description: "Vstup B"
+      - name: S
+        direction: in
+        type: "std_logic_vector(3 downto 0)"
+        description: "4-bitový výběr funkce"
+      - name: M
+        direction: in
+        type: "std_logic"
+        description: "Mód (H=logic, L=arithmetic)"
+      - name: C_IN_N
+        direction: in
+        type: "std_logic"
+        description: "Vstup přenosu n (active low)"
+
+      - name: A_B
+        direction: out
+        type: "std_logic"
+        description: "Výstup A=B"
+      - name: X
+        direction: out
+        type: "std_logic"
+        description: "carry propagate, active-low (~P)"
+      - name: Y
+        direction: out
+        type: "std_logic"
+        description: "carry generate, active-low (~G)"
+      - name: C_OUT_N4_N
+        direction: out
+        type: "std_logic"
+        description: "Výstup přenosu (carry) n+4, active-low"
+      - name: F
+        signal: FF
+        direction: out
+        type: "std_logic_vector(3 downto 0)"
+        description: "Výsledek operace"
+
+tests:
+  default:
+    wait_time: "10 ns"
+    assert_failed_severity: error
+    process_name: main
+    uut_instance: uut
+  suites:
+    - name: ALU_74181_tb
+      description: "Test Čtyřbitové aritmeticko-logické jednotky"
+      test_architecture: Behavioral
+      uut_architecture: Behavioral
+      # A, B, S, M, C_IN_N
+      # A_B, X, Y, C_OUT_N4_N, F
+      inputs: 5
+      report_format: 'fmt("A={} B={} S={} M={} C_IN_N={} => X={} Y={} F={}", f(a), f(b), f(s), f(m), f(c_in_n), f(x), f(y), f(ff))'
+      test_cases:
+        - name: "A 0001 + B 1110, C_IN_N=1"
+          data: ["0001", "1110", "1001", "0", "1",    "1",   "0", "1", "1", "1111"]
+        - name: "A 0001 + B 1110 C_IN_N=0"
+          data: ["0001", "1110", "1001", "0", "0",    "0",   "0", "1", "0", "0000"]
+        - name: "A 1010 - B 1010 C_IN_N=1"
+          data: ["1010", "1010", "0110", "0", "1",    "1",   "0", "1", "1", "1111"]
+        

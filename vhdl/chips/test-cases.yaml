@@ -1,0 +1,56 @@
+project:
+  name: TTCPU
+  version: 0.1
+  author:
+    name: Tomáš Pitner
+    email: tomas.pitner@gmail.com
+  library: ieee
+  use: [ieee.std_logic_1164.all, ieee.numeric_std.all, work.pkg_fmt.all, work.ttcpu_lib.all]
+
+entities:
+  - name: Multiplexer_74258
+    description: "Čtyřbitový dvoucestný invertující multiplexor s třístavovým výstupem"
+    ports:
+      - name: I0
+        direction: in
+        type: "std_logic_vector(3 downto 0)"
+        description: "Vstup 0 (A)"
+      - name: I1
+        direction: in
+        type: "std_logic_vector(3 downto 0)"
+        description: "Vstup 1 (B)"
+      - name: S
+        direction: in
+        type: std_logic
+        description: "Selektor A_N/B"
+      - name: G_N
+        direction: in
+        type: std_logic
+        description: "Výstup povolen (aktivní L)"
+      - name: Y
+        direction: out
+        type: "std_logic_vector(3 downto 0)"
+        description: "Výstup"
+
+tests:
+  default:
+    wait_time: "10 ns"
+    assert_failed_severity: error
+    process_name: main
+    uut_instance: uut
+  suites:
+    - name: Multiplexer_74258_tb
+      description: "Test invertujícího multiplexoru s třístavovým výstupem"
+      test_architecture: Behavioral
+      uut_architecture: Behavioral
+      inputs: 4
+      report_format: 'fmt("I0={} I1={} G_N={} S={} => Y={}", f(i0), f(i1), f(g_n), f(s), f(y))'
+      test_cases:
+        - name: "Výstupy odpojeny G_N=1"
+          data: ["0001", "1010", "0", "1", "ZZZZ"]
+        - name: "I0=0000 na vstupu 0"
+          data: ["0000", "0000", "0", "0", "1111"]
+        - name: "I1=1010 na vstupu 1"
+          data: ["0000", "1010", "1", "0", "0101"]
+        - name: "I0=0000 na výstupu"
+          data: ["1111", "0000", "0", "0", "0000"]

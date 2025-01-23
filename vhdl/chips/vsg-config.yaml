@@ -1,0 +1,31 @@
+rule:
+  architecture_013:
+    case: upper
+  architecture_014:
+    case: upper
+  architecture_015:
+    style: no_blank_line
+  architecture_016:
+    style: no_blank_line
+  if_030:
+    style: no_blank_line_unless_different_library
+  if_031:
+    style: no_blank_line_unless_different_library
+  instantiation_009:
+    case: upper
+  instantiation_034:
+    method: entity
+  entity_008:
+    case: upper
+  entity_012:
+    case: upper
+  process_022:
+    style: no_blank_line
+  process_023:
+    style: no_blank_line
+  process_026:
+    style: no_blank_line
+  process_027:
+    style: no_blank_line
+  process_029:
+    clock: edge

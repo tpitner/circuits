@@ -1,0 +1,4 @@
+#!/usr/bin/awk -f
+/error/ {print "\033[1;31m" $0 "\033[0m"}
+!/error/ {print $0}
+

@@ -1,0 +1,60 @@
+project:
+  name: TTCPU
+  version: 0.1
+  author:
+    name: Tomáš Pitner
+    email: tomas.pitner@gmail.com
+  library: ieee
+  use: [ieee.std_logic_1164.all, ieee.numeric_std.all, work.pkg_fmt.all, work.ttcpu_lib.all]
+
+entities:
+  - name: Demultiplexer_74138
+    description: "Demultiplexer 3:8 se třemi vstupy povolení"
+    ports:
+      - name: ABC
+        direction: in
+        type: "std_logic_vector(2 downto 0)"
+        description: "Výběr ABC"
+      - name: G1
+        direction: in
+        type: "std_logic"
+        description: "Povolení výstupu G1 (active-high)"
+      - name: G2A_N
+        direction: in
+        type: "std_logic"
+        description: "Povolení výstupu G2A_N (active-low)"
+      - name: G2B_N
+        direction: in
+        type: "std_logic"
+        description: "Povolení výstupu G2B_N (active-low)"
+
+      - name: Y
+        direction: out
+        type: "std_logic_vector(7 downto 0)"
+        description: "Výstupy (active-low)"
+
+tests:
+  default:
+    wait_time: "10 ns"
+    assert_failed_severity: error
+    process_name: main
+    uut_instance: uut
+  suites:
+    - name: Demultiplexer_74138_tb
+      description: "Test jednokanálového demultiplexeru 3:8"
+      test_architecture: Behavioral
+      uut_architecture: Behavioral
+      inputs: 4
+      report_format: 'fmt("ABC={} G1={} G2A_N={} G2B_N={} => Y={}", f(unsigned(abc)), f(g1), f(G2A_N), f(G2B_N), f(y))'
+      test_cases:
+        - name: "enabled select 0"
+          data: ["000", "1", "0", "0", "11111110"]        
+        - name: "disabled G1 select 0"
+          data: ["000", "0", "0", "0", "11111111"]
+        - name: "disabled G2A_N select 0"
+          data: ["000", "1", "1", "0", "11111111"]
+        - name: "enabled select 1"
+          data: ["001", "1", "0", "0", "11111101"]        
+        - name: "enabled select 7"
+          data: ["111", "1", "0", "0", "01111111"]        
+

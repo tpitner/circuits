@@ -1,0 +1,84 @@
+{{- $entity_index := 0 }} 
+{{- $suite_index := $entity_index }} 
+{{- $entity := (index .entities $entity_index) }}
+{{- $ports := $entity.ports }}
+{{- $suites := .tests.suites }}
+{{- $suite := (index $suites $suite_index) }}
+{{- $num_inputs := $suite.inputs }}
+{{- $severity := .tests.default.assert_failed_severity }}
+-- Project: {{ .project.name }} 
+-- Version: {{ .project.version }} 
+-- Author: {{ .project.author.name }} ({{ .project.author.email }})
+-- Test Description: {{ $suite.description }} 
+
+library {{ .project.library }};
+{{- range .project.use }}
+  use {{ . }};
+{{- end }}
+
+entity {{$suite.name}} is 
+end entity {{$suite.name}};
+
+-- Architecture of Test
+architecture {{$suite.test_architecture}} of {{$suite.name}} is
+    {{- $size := sub (len ($ports)) 1 }}
+    {{- range $index, $port := $ports }}
+    {{- if (has $port "signal") }} 
+    signal {{ strings.ToLower $port.signal }} : {{ $port.type }};
+    {{- else }}
+    signal {{ strings.ToLower $port.name }} : {{ $port.type }};
+    {{- end }}
+    {{- end }}
+begin
+  -- Instantiation of Unit Under Test: {{$entity.name}}
+  {{.tests.default.uut_instance}} : entity work.{{$entity.name}} ({{$suite.uut_architecture}})
+    port map (
+      {{- $size := sub (len ($ports)) 1 }}
+      {{- range $index, $port := $ports }}
+      {{ $port.name }} => {{ if has $port "signal" }} 
+            {{- strings.ToLower $port.signal}}
+          {{- else }}  
+            {{- strings.ToLower $port.name }}
+          {{- end }}{{- if (lt $index $size) }},{{ end }}
+      {{- end }}
+    );
+
+  -- Testing process
+  {{.tests.default.process_name}} : process is
+  begin
+    {{- $wait_time := .tests.default.wait_time }}
+
+    {{- range $case_index, $test_case := $suite.test_cases }}
+    {{- $last_port_index := sub (len $ports) 1}}
+    {{- $last_port_name := (index $ports $last_port_index).name}}
+    {{- $last_port_value := (index $test_case.data $last_port_index)}}
+    -- Test #{{ add $case_index 1 }} {{ $test_case.name }}
+    {{- range $index, $port := $ports }}
+    {{- $value := (index $test_case.data $index) }}
+    {{- $q := (ternary "'" "\"" (eq (len $value) 1)) }}
+    {{- if (lt $index $num_inputs) }}
+    {{- if has $port "signal" }} 
+    {{ strings.ToLower $port.signal }}
+    {{- else }}
+    {{ strings.ToLower $port.name }}
+    {{- end }} <= {{ $q }}{{ $value }}{{ $q }};
+    {{- end }}
+    {{- end }}
+    wait for {{ $wait_time }};
+    report {{ $suite.report_format }}; 
+        {{- range $index, $output_port := $ports }}
+        {{- $value := (index $test_case.data $index) }}
+        {{- $q := (ternary "'" "\"" (eq (len $value) 1)) }}
+        {{- if (ge $index $num_inputs) }}
+    assert {{if has $output_port "signal" }}
+          {{- strings.ToLower $output_port.signal }}
+        {{- else }}
+          {{- strings.ToLower $output_port.name }}
+        {{- end }} = {{ $q }}{{ $value }}{{ $q }}
+      report "{{ $test_case.name }} failed, {{ $output_port.name }} != {{ $value }}" severity {{ $severity }};
+        {{- end }}
+        {{- end }}
+    {{ end }}
+    wait;
+  end process {{.tests.default.process_name}};
+end architecture {{$suite.test_architecture}};

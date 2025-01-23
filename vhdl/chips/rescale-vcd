@@ -1,0 +1,44 @@
+#!/usr/bin/awk -f
+BEGIN {
+    # Získání argumentů
+    input_text = ARGV[1];    # Text k nahrazení (např. "1 fs")
+    output_text = ARGV[2];   # Nový text (např. "100 ps")
+
+    # Příkaz pro jednotkovou konverzi
+    cmd = "units -o %0.f -t '" output_text "' '" input_text "'"
+
+    # Získání výsledku z příkazu `units`
+    cmd | getline divisor
+    close(cmd)
+
+    # Kontrola, zda je dělitel platný
+    if (divisor == "") {
+        print "Error: Failed to calculate divisor using units." > "/dev/stderr"
+        exit 1
+    }
+
+    # Odstranění prvních dvou argumentů z ARGV (aby se nepovažovaly za soubory)
+    delete ARGV[1];
+    delete ARGV[2];
+
+    # Výpis zjištěného dělitele (pro ladění)
+    print "Rescaling VCD from unit " input_text " to " output_text " by /" divisor > "/dev/stderr"
+}
+
+{
+    # Nahrazení textu bez ohledu na počet mezer
+    gsub("  " input_text, "  " output_text);
+
+    # Zkontroluje, zda řádek začíná na # a obsahuje číslo
+    if ($0 ~ /^#[0-9]+$/) {
+        # Extrahuje číslo po #
+        num = substr($0, 2); 
+        # Přepočítá hodnotu pomocí zadaného dělitele
+        new_num = num / divisor;
+        # Nahradí řádek novou hodnotou
+        $0 = "#" new_num;
+    }
+
+    # Vytiskne upravený řádek
+    print;
+}

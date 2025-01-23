@@ -1,0 +1,27 @@
+quick_menu() { # prompt var; does NOT wait for Enter 
+    echo -ne $1
+    read -n 1 -s $2
+    clear_line
+}
+last_confirm=N
+confirm() { # does NOT wait for Enter 
+    echo -ne $1
+    read -n 1 -s last_confirm
+    clear_line
+}
+menu() { # prompt var; waits for Enter
+    echo -ne $1
+    read $2
+}
+ok() {
+    green " OK"
+}
+ord() {
+    local ord_num=$(printf '%d' "'$1")
+    # Convert to uppercase if ord_num is >= 97
+    [[ $ord_num -ge 97 ]] && ord_num=$((ord_num - 32))
+    echo -n $ord_num
+}
+ord_letter() {
+    echo -n $(( $(ord "$1") - 65 ))
+}

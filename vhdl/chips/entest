@@ -1,0 +1,88 @@
+#!/bin/bash
+source ansi
+source dialogs
+source config
+
+INTERACTIVE=1
+
+ENTITY=$1
+TB=$1_tb
+
+VHDL_VERSION=08
+VSG_CONFIG=vsg-config.yaml
+VSG_STYLE=jcl
+RESCALE_FROM="1 fs"
+RESCALE_TO="10 ns"
+GHDL_OPTIONS=" -lv --std=$VHDL_VERSION --mb-comments -fsynopsys"
+LIBS="TTCPU_lib.vhd fmt.vhd"
+
+ST_TIME=$(date +%s%3)
+printf "=== START: $(date) ===\n"
+
+while [[ $INTERACTIVE -gt 0 ]]; do
+    GENTEST=0
+    STYLE=0
+    HTML=0
+    ANALYZE=0
+    RUN=0
+    LOG=0
+    WAVE=0
+    HELP=0
+    INTERACTIVE=0
+    SELECTED=""
+
+    source list-vhd
+
+    MENU_TEXT='(H)elp (Q)uit '
+    [[ -f $SELECTED$TB$LOG_SUFFIX ]] && MENU_TEXT="(L)og $MENU_TEXT" 
+    [[ -f $SELECTED$TB_SUFFIX ]] && MENU_TEXT="Test(R)un $MENU_TEXT" 
+    [[ -f $SELECTED$VHD_SUFFIX ]] && MENU_TEXT="(E)dit (A)nalyse $MENU_TEXT" 
+    [[ -f $SELECTED$YAML_SUFFIX ]] && MENU_TEXT="(G)enTest $MENU_TEXT" 
+
+    echo -n " -> "; yellow "$SELECTED"; red " $MENU_TEXT\n"; read -n 1 -s COMMAND
+    COMMAND=$(echo $COMMAND | tr [:lower:] [:upper:])
+    case $COMMAND in 
+        E) magenta "Editing..."; /usr/local/bin/code "$SELECTED$VHD_SUFFIX" & ;;
+        A) ANALYZE=1 && ENTITY="$SELECTED" TB=$SELECTED"_tb" ;;
+        R) RUN=1 && ENTITY="$SELECTED" TB=$SELECTED"_tb" ;;
+        L) LOG=1 ;;
+        H) HELP=1 ;;
+        Q) QUIT=1; magenta "Quitting" ;;
+        *) INTERACTIVE=1 ;;
+    esac
+done
+
+[[ $GENTEST -gt 0 ]] &&\
+printf "=== Gomplate: Generating testbench $TB.vhd\n" &&\
+gomplate -f tb.vhd.tmpl -c.=$ENTITY.yaml > $TB.vhd
+
+[[ $STYLE -gt 0 ]] && \
+printf "=== VSG: Styling $ENTITY.vhd and $TB.vhd\n" &&\
+vsg -f $ENTITY.vhd $TB.vhd --style $VSG_STYLE -c $VSG_CONFIG --fix --backup
+
+[[ $ANALYZE -gt 0 ]] &&\
+printf "=== GHDL: Analyzing $ENTITY.vhd and $TB.vhd\n" &&\
+ghdl -a $GHDL_OPTIONS $LIBS $ENTITY.vhd $TB.vhd
+
+[[ $HTML -gt 0 ]] &&\
+printf "=== GHDL: Display FILEs in HTML with xrefs\n" &&\
+ghdl --xref-html $GHDL_OPTIONS $LIBS $ENTITY.vhd $TB.vhd
+
+[[ $RUN -gt 0 ]] && \
+printf "=== GHDL: Running $TB.vhd\n" &&\
+ghdl -r $GHDL_OPTIONS $TB --vcd=$ENTITY.vcd --stop-time=1us \
+| tee $TB.log | highlight-errors
+
+[[ $LOG -gt 0 ]] && \
+printf "=== View: $TB.log\n" &&\
+bat $TB.log
+
+[[ $WAVE -gt 0 ]] && \
+printf "=== VCD: Rescaling to $RESCALE_TO\n" &&\
+rescale-vcd "$RESCALE_FROM" "$RESCALE_TO" < $ENTITY.vcd > $ENTITY_rescaled.vcd &&\
+printf "=== GTKWAVE: Showing waveform of $TB.vhd\n" &&\
+gtkwave $ENTITY_rescaled.vcd &
+
+END_TIME=$(date +%s%3)
+ELAPSED=$(echo "$END_TIME - $ST_TIME" | bc)
+printf "=== END: $ELAPSED ms elapsed ===\n"

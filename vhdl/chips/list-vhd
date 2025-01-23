@@ -1,0 +1,36 @@
+#!/bin/bash
+source config
+source ansi
+source dialogs
+
+letter=65
+counter=0
+declare -a file_numbers
+
+files=$(find . -maxdepth $DEPTH -type f -name "*$VHD_SUFFIX" ! -name "*$TB_SUFFIX" | sort | head -n $LIMIT)
+
+for file in $files; do
+    base_name=$(basename "$file" "$VHD_SUFFIX")
+    [[ -f "$base_name$YAML_SUFFIX" ]] && yaml_status=$(green YAML) || yaml_status=""
+    [[ -f "$base_name$WAVE_SUFFIX" ]] && wave_status=$(brown WAVE) || wave_status=""
+    [[ -f "$base_name$TB_SUFFIX" ]] && tb_status=$(magenta TEST) || tb_status=""
+    [[ -f "$base_name"_tb"$LOG_SUFFIX" ]] && log_status=$(blue LOG) || log_status=""
+    
+    printf "%b" "\\$(printf "%03o" "$letter")"; space; yellow "$base_name"
+    echo " $yaml_status $tb_status $log_status $wave_status"
+    
+    file_numbers[$counter]="$base_name"
+    ((letter++))
+    ((counter++))
+done
+# echo "ALL ${!file_numbers[@]}"
+
+read -p "Press A.. to select file " -n1 -s index_letter
+index_num=$(ord_letter "$index_letter")
+
+if [[ $index_num -lt $counter ]]; then
+    export SELECTED="${file_numbers[$index_num]}"
+else
+    export SELECTED="${file_numbers[0]}"
+fi
+echo $SELECTED
