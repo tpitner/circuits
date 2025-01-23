@@ -16,7 +16,7 @@ for file in $files; do
     [[ -f "$base_name$TB_SUFFIX" ]] && tb_status=$(magenta TEST) || tb_status=""
     [[ -f "$base_name"_tb"$LOG_SUFFIX" ]] && log_status=$(blue LOG) || log_status=""
     
-    printf "%b" "\\$(printf "%03o" "$letter")"; space; brown "$base_name"
+    printf "%b " "\\$(printf "%03o" "$letter")"; brown "$base_name"
     echo " $yaml_status $tb_status $log_status $wave_status"
     
     file_numbers[$counter]="$base_name"
@@ -24,11 +24,9 @@ for file in $files; do
     ((counter++))
 done
 
-read -p "Press A.. to select file " -n1 -s index_letter
+read -p "Press letter to select or (Q)uit " -n1 -s index_letter
 clear_line
 index_num=$(ord_letter "$index_letter")
-if [[ 0 -le $index_num && $index_num -lt $counter ]]; then
+SELECTED="Q"
+[[ 0 -le $index_num && $index_num -lt $counter ]] &&\
     export SELECTED="${file_numbers[$index_num]}"
-else
-    export SELECTED="${file_numbers[0]}"
-fi
