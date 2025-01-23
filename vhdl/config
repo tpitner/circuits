@@ -7,3 +7,11 @@ TB_SUFFIX=_tb.vhd
 LOG_SUFFIX=.log
 WAVE_SUFFIX=.vcd
 HELP_FILE=help.md
+EDITOR=/usr/local/bin/code
+
+VHDL_VERSION=08
+VSG_CONFIG=vsg-config.yaml
+VSG_STYLE=jcl
+RESCALE_FROM="1 fs"
+RESCALE_TO="10 ns"
+GHDL_OPTIONS=" -lv --std=$VHDL_VERSION --mb-comments -fsynopsys"

@@ -7,13 +7,6 @@ INTERACTIVE=1
 
 ENTITY=$1
 TB=$1_tb
-
-VHDL_VERSION=08
-VSG_CONFIG=vsg-config.yaml
-VSG_STYLE=jcl
-RESCALE_FROM="1 fs"
-RESCALE_TO="10 ns"
-GHDL_OPTIONS=" -lv --std=$VHDL_VERSION --mb-comments -fsynopsys"
 LIBS="TTCPU_lib.vhd fmt.vhd"
 
 ST_TIME=$(date +%s%3)
@@ -24,30 +17,32 @@ while [[ $INTERACTIVE -gt 0 ]]; do
     STYLE=0
     HTML=0
     ANALYZE=0
+    ANALYZE_TB=0
     RUN=0
     LOG=0
     WAVE=0
     HELP=0
     INTERACTIVE=0
-    SELECTED=""
+    SELECTED=
 
     source list-vhd
 
     MENU_TEXT='(H)elp (Q)uit '
     [[ -f $SELECTED$TB$LOG_SUFFIX ]] && MENU_TEXT="(L)og $MENU_TEXT" 
-    [[ -f $SELECTED$TB_SUFFIX ]] && MENU_TEXT="Test(R)un $MENU_TEXT" 
-    [[ -f $SELECTED$VHD_SUFFIX ]] && MENU_TEXT="(E)dit (A)nalyse $MENU_TEXT" 
+    [[ -f $SELECTED$TB_SUFFIX ]] && MENU_TEXT="(R)un $MENU_TEXT" 
+    [[ -f $SELECTED$VHD_SUFFIX ]] && MENU_TEXT="(E)dit (A)nalyse (T)est $MENU_TEXT" 
     [[ -f $SELECTED$YAML_SUFFIX ]] && MENU_TEXT="(G)enTest $MENU_TEXT" 
 
-    echo -n " -> "; yellow "$SELECTED"; red " $MENU_TEXT\n"; read -n 1 -s COMMAND
+    yellow ">> $SELECTED"; red " $MENU_TEXT\n"; read -n 1 -s COMMAND
     COMMAND=$(echo $COMMAND | tr [:lower:] [:upper:])
     case $COMMAND in 
-        E) magenta "Editing..."; /usr/local/bin/code "$SELECTED$VHD_SUFFIX" & ;;
+        E) magenta "Edit\n"; $EDITOR "$SELECTED$VHD_SUFFIX" & ;;
         A) ANALYZE=1 && ENTITY="$SELECTED" TB=$SELECTED"_tb" ;;
+        T) ANALYZE_TB=1 && ENTITY="$SELECTED" TB=$SELECTED"_tb" ;;
         R) RUN=1 && ENTITY="$SELECTED" TB=$SELECTED"_tb" ;;
         L) LOG=1 ;;
         H) HELP=1 ;;
-        Q) QUIT=1; magenta "Quitting" ;;
+        Q) QUIT=1; magenta "Quit\n" ;;
         *) INTERACTIVE=1 ;;
     esac
 done
@@ -61,7 +56,11 @@ printf "=== VSG: Styling $ENTITY.vhd and $TB.vhd\n" &&\
 vsg -f $ENTITY.vhd $TB.vhd --style $VSG_STYLE -c $VSG_CONFIG --fix --backup
 
 [[ $ANALYZE -gt 0 ]] &&\
-printf "=== GHDL: Analyzing $ENTITY.vhd and $TB.vhd\n" &&\
+printf "=== GHDL: Analyzing $ENTITY.vhd\n" &&\
+ghdl -a $GHDL_OPTIONS $LIBS $ENTITY.vhd
+
+[[ $ANALYZE_TB -gt 0 ]] &&\
+printf "=== GHDL: Analyzing testbench $TB.vhd\n" &&\
 ghdl -a $GHDL_OPTIONS $LIBS $ENTITY.vhd $TB.vhd
 
 [[ $HTML -gt 0 ]] &&\
